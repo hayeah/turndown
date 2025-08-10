@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import TurndownService from '../lib/turndown.es.js'
+import { TestCase, parseAndGetElement, parseXHTMLAndGetBody, convertElement } from './test-utils'
 
 export interface DOMParserConstructor {
   new(): DOMParser;
@@ -13,35 +14,6 @@ export function createXmlParserTests(DOMParserImpl: DOMParserConstructor) {
       beforeEach(() => {
         turndownService = new TurndownService()
       })
-
-      // Helper function to convert a single element by wrapping it
-      const convertElement = (element: Element): string => {
-        // Wrap the element in a div to ensure turndown processes it correctly
-        const wrapper = element.ownerDocument.createElement('div')
-        wrapper.appendChild(element.cloneNode(true))
-        return turndownService.turndown(wrapper).trim()
-      }
-
-      // Helper function to parse HTML/XHTML and get elements
-      const parseAndGetElement = <T extends Element = Element>(
-        html: string,
-        tagName: string,
-        mimeType: 'text/html' | 'application/xhtml+xml' = 'text/html'
-      ): T => {
-        const parser = new DOMParserImpl()
-        const doc = parser.parseFromString(html, mimeType)
-        return doc.getElementsByTagName(tagName)[0] as T
-      }
-
-      // Helper function to parse XHTML with DOCTYPE and get body element
-      const parseXHTMLAndGetBody = (bodyContent: string): HTMLBodyElement => {
-        const xhtmlString = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
-          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-        <html xmlns="http://www.w3.org/1999/xhtml">
-          <body>${bodyContent}</body>
-        </html>`
-        return parseAndGetElement<HTMLBodyElement>(xhtmlString, 'body', 'application/xhtml+xml')
-      }
 
       // Helper function to test various forms of self-closing tags
       const testSelfClosingVariants = (
@@ -62,32 +34,34 @@ export function createXmlParserTests(DOMParserImpl: DOMParserConstructor) {
       }
 
       describe('self-closing tags', () => {
-        it('should handle self-closing img tags', () => {
-          const html = '<img src="test.jpg" alt="Test" />'
-          const expected = '![Test](test.jpg)'
-          const result = turndownService.turndown(html)
-          expect(result).toBe(expected)
-        })
-
-        it('should handle self-closing br tags', () => {
-          const html = 'Line 1<br />Line 2'
-          const expected = 'Line 1  \nLine 2'
-          const result = turndownService.turndown(html)
-          expect(result).toBe(expected)
-        })
-
-        it('should handle self-closing hr tags', () => {
-          const html = 'Text before<hr />Text after'
-          const expected = 'Text before\n\n* * *\n\nText after'
-          const result = turndownService.turndown(html)
-          expect(result).toBe(expected)
-        })
-
-        it('should handle multiple self-closing tags', () => {
-          const html = '<p>Paragraph with image <img src="test.jpg" alt="Test" /> and break<br />after.</p>'
-          const expected = 'Paragraph with image ![Test](test.jpg) and break  \nafter.'
-          const result = turndownService.turndown(html)
-          expect(result).toBe(expected)
+        const testCases: TestCase[] = [
+          {
+            description: 'should handle self-closing img tags',
+            input: '<img src="test.jpg" alt="Test" />',
+            expected: '![Test](test.jpg)'
+          },
+          {
+            description: 'should handle self-closing br tags',
+            input: 'Line 1<br />Line 2',
+            expected: 'Line 1  \nLine 2'
+          },
+          {
+            description: 'should handle self-closing hr tags',
+            input: 'Text before<hr />Text after',
+            expected: 'Text before\n\n* * *\n\nText after'
+          },
+          {
+            description: 'should handle multiple self-closing tags',
+            input: '<p>Paragraph with image <img src="test.jpg" alt="Test" /> and break<br />after.</p>',
+            expected: 'Paragraph with image ![Test](test.jpg) and break  \nafter.'
+          }
+        ];
+        
+        testCases.forEach(({ description, input, expected }) => {
+          it(description, () => {
+            const result = turndownService.turndown(input)
+            expect(result).toBe(expected)
+          })
         })
       })
 
@@ -112,7 +86,7 @@ export function createXmlParserTests(DOMParserImpl: DOMParserConstructor) {
             <br />
             <hr />
           `
-          const body = parseXHTMLAndGetBody(bodyContent)
+          const body = parseXHTMLAndGetBody(bodyContent, DOMParserImpl)
           const imgElement = body.getElementsByTagName('img')[0] as HTMLImageElement
           
           // Test that the element exists
@@ -123,7 +97,8 @@ export function createXmlParserTests(DOMParserImpl: DOMParserConstructor) {
 
         it('should convert XHTML DOM directly to markdown', () => {
           const body = parseXHTMLAndGetBody(
-            '<p>Test with <img src="test.jpg" alt="Test" /> image</p>'
+            '<p>Test with <img src="test.jpg" alt="Test" /> image</p>',
+            DOMParserImpl
           )
           
           // Convert the XHTML DOM directly (not as string)
@@ -139,7 +114,7 @@ export function createXmlParserTests(DOMParserImpl: DOMParserConstructor) {
             <hr />
             <p>Another paragraph<br />with line break.</p>
           `
-          const body = parseXHTMLAndGetBody(bodyContent)
+          const body = parseXHTMLAndGetBody(bodyContent, DOMParserImpl)
           
           const expectedMarkdown = `Title
 =====
@@ -158,8 +133,10 @@ with line break.`
       })
 
       describe('Mixed content with self-closing tags', () => {
-        it('should handle complex HTML with multiple self-closing elements', () => {
-          const html = `
+        const testCases: TestCase[] = [
+          {
+            description: 'should handle complex HTML with multiple self-closing elements',
+            input: `
             <article>
               <h1>Article Title</h1>
               <img src="hero.jpg" alt="Hero Image" />
@@ -168,9 +145,8 @@ with line break.`
               <p>Second paragraph<br />with line break.</p>
               <img src="footer.jpg" alt="Footer Image" />
             </article>
-          `
-          
-          const expectedMarkdown = `Article Title
+          `,
+            expected: `Article Title
 =============
 
 ![Hero Image](hero.jpg)
@@ -183,9 +159,14 @@ Second paragraph
 with line break.
 
 ![Footer Image](footer.jpg)`
-          
-          const result = turndownService.turndown(html)
-          expect(result).toBe(expectedMarkdown)
+          }
+        ];
+        
+        testCases.forEach(({ description, input, expected }) => {
+          it(description, () => {
+            const result = turndownService.turndown(input)
+            expect(result).toBe(expected)
+          })
         })
       })
 
@@ -195,18 +176,20 @@ with line break.
           const htmlImg = parseAndGetElement<HTMLImageElement>(
             '<img src="test.jpg" />', 
             'img', 
-            'text/html'
+            'text/html',
+            DOMParserImpl
           )
-          const htmlResult = convertElement(htmlImg)
+          const htmlResult = convertElement(htmlImg, turndownService)
           expect(htmlResult).toBe('![](test.jpg)')
           
           // Test with XHTML (lowercase nodeName)
           const xhtmlImg = parseAndGetElement<HTMLImageElement>(
             '<img src="test.jpg" xmlns="http://www.w3.org/1999/xhtml" />',
             'img',
-            'application/xhtml+xml'
+            'application/xhtml+xml',
+            DOMParserImpl
           )
-          const xhtmlResult = convertElement(xhtmlImg)
+          const xhtmlResult = convertElement(xhtmlImg, turndownService)
           expect(xhtmlResult).toBe('![](test.jpg)')
         })
 
