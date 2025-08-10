@@ -1,4 +1,4 @@
-import { repeat } from './utilities'
+import { repeat, isTag } from './utilities'
 
 var rules = {}
 
@@ -50,7 +50,7 @@ rules.list = {
 
   replacement: function (content, node) {
     var parent = node.parentNode
-    if (parent.nodeName === 'LI' && parent.lastElementChild === node) {
+    if (isTag(parent, 'li') && parent.lastElementChild === node) {
       return '\n' + content
     } else {
       return '\n\n' + content + '\n\n'
@@ -68,7 +68,7 @@ rules.listItem = {
       .replace(/\n/gm, '\n    ') // indent
     var prefix = options.bulletListMarker + '   '
     var parent = node.parentNode
-    if (parent.nodeName === 'OL') {
+    if (isTag(parent, 'ol')) {
       var start = parent.getAttribute('start')
       var index = Array.prototype.indexOf.call(parent.children, node)
       prefix = (start ? Number(start) + index : index + 1) + '.  '
@@ -83,9 +83,9 @@ rules.indentedCodeBlock = {
   filter: function (node, options) {
     return (
       options.codeBlockStyle === 'indented' &&
-      node.nodeName === 'PRE' &&
+      isTag(node, 'pre') &&
       node.firstChild &&
-      node.firstChild.nodeName === 'CODE'
+      isTag(node.firstChild, 'code')
     )
   },
 
@@ -102,9 +102,9 @@ rules.fencedCodeBlock = {
   filter: function (node, options) {
     return (
       options.codeBlockStyle === 'fenced' &&
-      node.nodeName === 'PRE' &&
+      isTag(node, 'pre') &&
       node.firstChild &&
-      node.firstChild.nodeName === 'CODE'
+      isTag(node.firstChild, 'code')
     )
   },
 
@@ -146,7 +146,7 @@ rules.inlineLink = {
   filter: function (node, options) {
     return (
       options.linkStyle === 'inlined' &&
-      node.nodeName === 'A' &&
+      isTag(node, 'a') &&
       node.getAttribute('href')
     )
   },
@@ -164,7 +164,7 @@ rules.referenceLink = {
   filter: function (node, options) {
     return (
       options.linkStyle === 'referenced' &&
-      node.nodeName === 'A' &&
+      isTag(node, 'a') &&
       node.getAttribute('href')
     )
   },
@@ -228,9 +228,9 @@ rules.strong = {
 rules.code = {
   filter: function (node) {
     var hasSiblings = node.previousSibling || node.nextSibling
-    var isCodeBlock = node.parentNode.nodeName === 'PRE' && !hasSiblings
+    var isCodeBlock = isTag(node.parentNode, 'pre') && !hasSiblings
 
-    return node.nodeName === 'CODE' && !isCodeBlock
+    return isTag(node, 'code') && !isCodeBlock
   },
 
   replacement: function (content) {

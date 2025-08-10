@@ -62,15 +62,24 @@ export function hasMeaningfulWhenBlank (node) {
   return has(node, meaningfulWhenBlankElements)
 }
 
+export function tagName (node) {
+  return (node && (node.localName || node.nodeName || '')).toLowerCase()
+}
+
+export function isTag (node, name) {
+  if (!node) return false
+  return tagName(node) === name.toLowerCase()
+}
+
 function is (node, tagNames) {
   return tagNames.indexOf(node.nodeName.toUpperCase()) >= 0
 }
 
 function has (node, tagNames) {
-  return (
-    node.getElementsByTagName &&
-    tagNames.some(function (tagName) {
-      return node.getElementsByTagName(tagName).length
-    })
-  )
+  if (!node.getElementsByTagName) return false
+  return tagNames.some(function (tagName) {
+    // Try uppercase first (standard HTML), then lowercase (for XML/XHTML)
+    return node.getElementsByTagName(tagName).length ||
+           node.getElementsByTagName(tagName.toLowerCase()).length
+  })
 }

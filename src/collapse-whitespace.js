@@ -25,6 +25,8 @@
  * THE SOFTWARE.
  */
 
+import { isTag } from './utilities'
+
 /**
  * collapseWhitespace(options) removes extraneous whitespace from an the given element.
  *
@@ -35,7 +37,7 @@ function collapseWhitespace (options) {
   var isBlock = options.isBlock
   var isVoid = options.isVoid
   var isPre = options.isPre || function (node) {
-    return node.nodeName === 'PRE'
+    return isTag(node, 'pre')
   }
 
   if (!element.firstChild || isPre(element)) return
@@ -65,7 +67,7 @@ function collapseWhitespace (options) {
 
       prevText = node
     } else if (node.nodeType === 1) { // Node.ELEMENT_NODE
-      if (isBlock(node) || node.nodeName === 'BR') {
+      if (isBlock(node) || isTag(node, 'br')) {
         if (prevText) {
           prevText.data = prevText.data.replace(/ $/, '')
         }

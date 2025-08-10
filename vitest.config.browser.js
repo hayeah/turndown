@@ -4,7 +4,11 @@ export default defineConfig({
   test: {
     browser: {
       enabled: true,
-      name: 'chromium',
+      instances: [
+        {
+          browser: 'chromium'
+        }
+      ],
       provider: 'playwright',
       headless: true
     },

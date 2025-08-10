@@ -1,6 +1,6 @@
 import collapseWhitespace from './collapse-whitespace'
 import HTMLParser from './html-parser'
-import { isBlock, isVoid } from './utilities'
+import { isBlock, isVoid, isTag } from './utilities'
 
 export default function RootNode (input, options) {
   var root
@@ -14,7 +14,17 @@ export default function RootNode (input, options) {
     )
     root = doc.getElementById('turndown-root')
   } else {
-    root = input.cloneNode(true)
+    // For elements that need rule processing (like pre, blockquote, etc),
+    // wrap them so they get processed correctly
+    var clone = input.cloneNode(true)
+    if (clone.nodeType === 1 && !isTag(clone, 'div') && !isTag(clone, 'body') && !isTag(clone, 'html')) {
+      // Create wrapper element
+      var wrapper = clone.ownerDocument.createElement('div')
+      wrapper.appendChild(clone)
+      root = wrapper
+    } else {
+      root = clone
+    }
   }
   collapseWhitespace({
     element: root,
@@ -33,5 +43,5 @@ function htmlParser () {
 }
 
 function isPreOrCode (node) {
-  return node.nodeName === 'PRE' || node.nodeName === 'CODE'
+  return isTag(node, 'pre') || isTag(node, 'code')
 }

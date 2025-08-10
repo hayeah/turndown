@@ -1,8 +1,8 @@
-import { isBlock, isVoid, hasVoid, isMeaningfulWhenBlank, hasMeaningfulWhenBlank } from './utilities'
+import { isBlock, isVoid, hasVoid, isMeaningfulWhenBlank, hasMeaningfulWhenBlank, isTag } from './utilities'
 
 export default function Node (node, options) {
   node.isBlock = isBlock(node)
-  node.isCode = node.nodeName === 'CODE' || node.parentNode.isCode
+  node.isCode = isTag(node, 'code') || node.parentNode.isCode
   node.isBlank = isBlank(node)
   node.flankingWhitespace = flankingWhitespace(node, options)
   return node
@@ -66,7 +66,7 @@ function isFlankedByWhitespace (side, node, options) {
   if (sibling) {
     if (sibling.nodeType === 3) {
       isFlanked = regExp.test(sibling.nodeValue)
-    } else if (options.preformattedCode && sibling.nodeName === 'CODE') {
+    } else if (options.preformattedCode && isTag(sibling, 'code')) {
       isFlanked = false
     } else if (sibling.nodeType === 1 && !isBlock(sibling)) {
       isFlanked = regExp.test(sibling.textContent)
