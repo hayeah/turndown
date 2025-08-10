@@ -63,7 +63,7 @@ export function hasMeaningfulWhenBlank (node) {
 }
 
 function is (node, tagNames) {
-  return tagNames.indexOf(node.nodeName) >= 0
+  return tagNames.indexOf(node.nodeName.toUpperCase()) >= 0
 }
 
 function has (node, tagNames) {
