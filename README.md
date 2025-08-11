@@ -2,6 +2,15 @@
 
 Convert HTML into Markdown with JavaScript.
 
+## Recent Changes (xml branch)
+
+This branch includes significant improvements for XHTML/XML document handling:
+
+* **TypeScript and Testing Infrastructure**: Added TypeScript support and Vitest testing framework with comprehensive test suites for both Node.js and browser environments
+* **Case-Insensitive Tag Handling**: Improved support for XHTML/XML documents by implementing case-insensitive tag matching, ensuring proper conversion of uppercase and mixed-case HTML tags
+* **Enhanced Test Coverage**: Restructured tests with shared utilities and table-driven test patterns for better maintainability and coverage of edge cases
+* **XML Parser Testing**: Added dedicated test suites for XML parsing behavior across different environments
+
 ## Project Updates
 * `to-markdown` has been renamed to Turndown. See the [migration guide](https://github.com/domchristie/to-markdown/wiki/Migrating-from-to-markdown-to-Turndown) for details.
 * Turndown repository has changed its URL to https://github.com/mixmark-io/turndown.
