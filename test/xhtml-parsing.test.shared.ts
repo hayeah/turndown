@@ -231,6 +231,18 @@ Paragraph with **bold** and _italic_.
           expected: 'Line one  \nLine two'
         },
         {
+          description: 'should handle multiple self-closing tags with content after',
+          input: `<body>
+        <custom-tag/>
+        <title/>
+        <a id="test"/>
+        <h1>Content After Self-Closing Tags</h1>
+        <br/>
+        <p>More content</p>
+      </body>`,
+          expected: '# Content After Self-Closing Tags\n\n  \n\nMore content'
+        },
+        {
           description: 'should handle images with attributes',
           input: '<p><img src="/image.png" alt="Alt text" title="Title text"/></p>',
           expected: '![Alt text](/image.png "Title text")'
